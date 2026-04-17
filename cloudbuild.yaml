@@ -1,0 +1,95 @@
+# iCM Discovery — Cloud Build Auto-Deploy Pipeline
+# ─────────────────────────────────────────────────
+# Trigger: Push to "main" branch
+# Target:  funtion-vm (us-central1-a)
+# Deploys: Discovery Agent + SI Dashboard
+# ─────────────────────────────────────────────────
+
+steps:
+
+  # ══════════════════════════════════════════════════
+  # DISCOVERY AGENT
+  # ══════════════════════════════════════════════════
+
+  # Step 1: Install Agent dependencies
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['ci']
+    dir: 'icm-discovery-agent'
+    id: 'agent-install'
+
+  # Step 2: Build Agent
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['run', 'build']
+    dir: 'icm-discovery-agent'
+    id: 'agent-build'
+    waitFor: ['agent-install']
+
+  # ══════════════════════════════════════════════════
+  # SI DASHBOARD
+  # ══════════════════════════════════════════════════
+
+  # Step 3: Install Dashboard dependencies
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['ci']
+    dir: 'icm-si-dashboard'
+    id: 'dashboard-install'
+
+  # Step 4: Build Dashboard
+  - name: 'node:20'
+    entrypoint: 'npm'
+    args: ['run', 'build']
+    dir: 'icm-si-dashboard'
+    id: 'dashboard-build'
+    waitFor: ['dashboard-install']
+
+  # ══════════════════════════════════════════════════
+  # DEPLOY TO VM
+  # ══════════════════════════════════════════════════
+
+  # Step 5: Deploy Agent to VM
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud compute scp --recurse \
+          icm-discovery-agent/dist/* \
+          funtion-vm:/var/www/agent/ \
+          --zone=us-central1-a \
+          --quiet
+    id: 'deploy-agent'
+    waitFor: ['agent-build']
+
+  # Step 6: Deploy Dashboard to VM
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud compute scp --recurse \
+          icm-si-dashboard/dist/* \
+          funtion-vm:/var/www/dashboard/ \
+          --zone=us-central1-a \
+          --quiet
+    id: 'deploy-dashboard'
+    waitFor: ['dashboard-build']
+
+  # Step 7: Restart Nginx to pick up changes
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud compute ssh funtion-vm \
+          --zone=us-central1-a \
+          --quiet \
+          --command="sudo nginx -t && sudo systemctl reload nginx"
+    id: 'restart-nginx'
+    waitFor: ['deploy-agent', 'deploy-dashboard']
+
+timeout: '600s'
+options:
+  logging: CLOUD_LOGGING_ONLY

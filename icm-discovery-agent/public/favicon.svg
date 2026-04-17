@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <!-- Green dot -->
+  <circle cx="17" cy="4" r="3" fill="#4CAF50"/>
+  <!-- Red chevron -->
+  <path d="M8 10 L17 19 L26 10 L30 14 L17 27 L4 14 Z" fill="#E5521A"/>
+  <!-- Green chevron -->
+  <path d="M4 18 L17 31 L26 22 L30 26 L17 39 L0 22 Z" fill="#4CAF50"/>
+  <!-- Blue chevron -->
+  <path d="M8 26 L17 35 L30 22 L34 26 L17 43 L4 30 Z" fill="#2196F3"/>
+</svg>

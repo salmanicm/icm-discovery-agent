@@ -1,0 +1,19 @@
+{
+  "name": "icm-discovery-agent",
+  "private": true,
+  "version": "1.0.0",
+  "description": "iCareManager Voice Discovery Agent — browser-based AI workflow interviews",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vapi-ai/web": "^2.2.7",
+    "pdf-parse": "^2.4.5",
+    "pdfjs-dist": "^3.11.174"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

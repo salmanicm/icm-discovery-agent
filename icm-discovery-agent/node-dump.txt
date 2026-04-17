@@ -1,0 +1,76 @@
+
+=== Extract Payload (n8n-nodes-base.code) ===
+{
+  "jsCode": "const body = $input.first().json.body || $input.first().json;\nconst transcript     = body.transcript || '';\nconst customerName   = body.customerName || body.customer_name || 'Unknown';\nconst email          = body.email || '';\nconst firstName      = body.firstName || '';\nconst lastName       = body.lastName || '';\nconst sessionId      = body.sessionId || '';\nconst sessionDate    = body.session_date || new Date().toISOString().split('T')[0];\nconst sessionDuration = body.call_duration_minutes || 0;\nconst deptsCovered   = body.departments_covered || 0;\n\nlet jobTitle = 'Not specified';\nlet department = 'Not specified';\nconst titlePats = [/(?:i am|i'm|my (?:title|role|position) is)\\s+(?:a |an |the )?([^,.\\n]+)/i, /(?:work as|working as)\\s+(?:a |an |the )?([^,.\\n]+)/i];\nfor (const p of titlePats) { const m = transcript.match(p); if (m) { jobTitle = m[1].trim(); break; } }\nconst deptPats = [/(?:i work in|i'm in|my department is|from the)\\s+(?:the )?([^,.\\n]+?)\\s+(?:department|team|division)/i, /(?:department|team)\\s+(?:is|called)\\s+([^,.\\n]+)/i];\nfor (const p of deptPats) { const m = transcript.match(p); if (m) { department = m[1].trim(); break; } }\n\nconst safeDept = department.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);\nconst safeFirst = firstName.replace(/[^a-zA-Z0-9]/g, '');\nconst safeLast = lastName.replace(/[^a-zA-Z0-9]/g, '');\nconst fileName = safeDept + '_' + safeFirst + '_' + safeLast + '_' + sessionDate;\n\nconst docContent = [\n  '========================================',\n  'PRE-CALL DISCOVERY SESSION',\n  '========================================',\n  'Customer:     ' + customerName,\n  'Name:         ' + firstName + ' ' + lastName,\n  'Email:        ' + email,\n  'Job Title:    ' + jobTitle,\n  'Department:   ' + department,\n  'Session Date: ' + sessionDate,\n  'Duration:     ' + sessionDuration + ' minutes',\n  'Departments:  ' + deptsCovered,\n  'Session ID:   ' + sessionId,\n  '========================================', '',\n  'FULL TRANSCRIPT',\n  '----------------------------------------', '',\n  transcript, '',\n  '----------------------------------------',\n  'End of Transcript',\n  '========================================',\n].join('\\n');\n\nreturn [{ json: { transcript, customerName, email, firstName, lastName, jobTitle, department, sessionId, sessionDate, sessionDuration, deptsCovered, fileName, docContent, sessionKey: email + '_' + customerName } }];"
+}
+
+=== Check Customer Folder (n8n-nodes-base.googleDrive) ===
+{
+  "operation": "search"
+}
+Credentials: {"googleDriveOAuth2Api":{"id":"7ZO1go4lJ59PzCIv","name":"Google Drive account"}}
+
+=== Check Folder Result (n8n-nodes-base.code) ===
+{
+  "jsCode": "const searchResults = $input.first().json;\nconst prev = $('Extract Payload').first().json;\nlet folderId = '';\nif (searchResults && searchResults.id) { folderId = searchResults.id; }\nreturn [{ json: { ...prev, customerFolderExists: !!folderId, customerFolderId: folderId } }];"
+}
+
+=== Folder Exists? (n8n-nodes-base.if) ===
+{
+  "conditions": {
+    "options": {
+      "version": 2
+    },
+    "combinator": "and",
+    "conditions": [
+      {
+        "leftValue": "={{ $json.customerFolderExists }}",
+        "rightValue": true,
+        "operator": {
+          "type": "boolean",
+          "operation": "false"
+        }
+      }
+    ]
+  },
+  "options": {}
+}
+
+=== Create Customer Folder (n8n-nodes-base.googleDrive) ===
+{
+  "name": "={{ $json.customerName }}",
+  "driveId": {
+    "__rl": true,
+    "value": "myDrive",
+    "mode": "list"
+  },
+  "folderId": {
+    "__rl": true,
+    "value": "1FgLI7kMbaIfmcq-Az5vEgzOTLkylAmGh",
+    "mode": "id"
+  },
+  "options": {}
+}
+Credentials: {"googleDriveOAuth2Api":{"id":"7ZO1go4lJ59PzCIv","name":"Google Drive account"}}
+
+=== Merge Folder ID (n8n-nodes-base.code) ===
+{
+  "jsCode": "const prev = $('Check Folder Result').first().json;\nconst folderCreated = $input.first().json;\nconst folderId = prev.customerFolderId || folderCreated.id;\nreturn [{ json: { ...prev, customerFolderId: folderId } }];"
+}
+
+=== Save Transcript File (n8n-nodes-base.googleDrive) ===
+{
+  "name": "={{ $json.fileName }}.txt",
+  "driveId": {
+    "__rl": true,
+    "value": "myDrive",
+    "mode": "list"
+  },
+  "folderId": {
+    "__rl": true,
+    "value": "={{ $json.customerFolderId }}",
+    "mode": "id"
+  },
+  "options": {}
+}
+Credentials: {"googleDriveOAuth2Api":{"id":"7ZO1go4lJ59PzCIv","name":"Google Drive account"}}

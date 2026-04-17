@@ -1,0 +1,35 @@
+ASSISTANT: iCM Discovery Agent
+Server URL: (empty)
+
+TOOLS (4 total):
+
+  ✅ clear_data
+    ID: 5ba6f6ce-9832-47a5-8bce-d5bf5a1c5a78
+    Current URL:  https://babarnawaz.app.n8n.cloud/webhook/icm-session-clear
+    Expected URL: https://babarnawaz.app.n8n.cloud/webhook/icm-session-clear
+    Description:  Deletes the current session record and clears saved data
+    Parameters:   []
+
+  ✅ save_progress
+    ID: 3539afb1-dc03-4fbe-b973-e7f23b8d5e97
+    Current URL:  https://babarnawaz.app.n8n.cloud/webhook/icm-session-save
+    Expected URL: https://babarnawaz.app.n8n.cloud/webhook/icm-session-save
+    Description:  Saves intermediate customer information to the database during the conversation.
+    Parameters:   ["customer_info"]
+
+  ✅ resume_session
+    ID: 2d275ee0-1b0d-49dc-9c66-08fc27406351
+    Current URL:  https://babarnawaz.app.n8n.cloud/webhook/icm-resume-check
+    Expected URL: https://babarnawaz.app.n8n.cloud/webhook/icm-resume-check
+    Description:  Fetches existing customer data to resume a previous conversation context.
+    Parameters:   ["session_id"]
+
+  ✅ complete_conversation
+    ID: a2525104-769a-4858-9b3c-b3f895f3f52f
+    Current URL:  https://babarnawaz.app.n8n.cloud/webhook/icm-session-complete
+    Expected URL: https://babarnawaz.app.n8n.cloud/webhook/icm-session-complete
+    Description:  Finalizes the session, generates the final transcript, and triggers the follow-up email sequence.
+    Parameters:   ["summary","transcript"]
+
+ASSISTANT MODEL TOOLS:
+  (none bound directly - tools are likely in toolIds)

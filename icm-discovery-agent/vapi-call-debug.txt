@@ -1,0 +1,7 @@
+=== Test 1: Call with metadata ===
+Status: 400
+Body: {"statusCode":400,"message":"Your Wallet Balance is -0.61. Please Purchase More Credits or Upgrade Your Plan Before Proceeding.","error":"Bad Request","subscriptionLimits":{"concurrencyBlocked":false,"concurrencyLimit":10,"remainingConcurrentCalls":9}}
+
+=== Test 2: Call without metadata ===
+Status: 400
+Body: {"statusCode":400,"message":"Your Wallet Balance is -0.61. Please Purchase More Credits or Upgrade Your Plan Before Proceeding.","error":"Bad Request","subscriptionLimits":{"concurrencyBlocked":false,"concurrencyLimit":10,"remainingConcurrentCalls":9}}
