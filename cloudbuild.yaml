@@ -1,7 +1,7 @@
 # iCM Discovery — Cloud Build Auto-Deploy Pipeline
 # ─────────────────────────────────────────────────
 # Trigger: Push to "main" branch
-# Target:  funtion-vm (us-central1-a)
+# Target:  function-vm (us-central1-a)
 # Deploys: Discovery Agent + SI Dashboard
 # ─────────────────────────────────────────────────
 
@@ -57,7 +57,7 @@ steps:
       - |
         gcloud compute scp --recurse \
           icm-discovery-agent/dist/* \
-          funtion-vm:/var/www/agent/ \
+          function-vm:/var/www/agent/ \
           --zone=us-central1-a \
           --quiet
     id: 'deploy-agent'
@@ -71,7 +71,7 @@ steps:
       - |
         gcloud compute scp --recurse \
           icm-si-dashboard/dist/* \
-          funtion-vm:/var/www/dashboard/ \
+          function-vm:/var/www/dashboard/ \
           --zone=us-central1-a \
           --quiet
     id: 'deploy-dashboard'
@@ -83,7 +83,7 @@ steps:
     args:
       - '-c'
       - |
-        gcloud compute ssh funtion-vm \
+        gcloud compute ssh function-vm \
           --zone=us-central1-a \
           --quiet \
           --command="sudo nginx -t && sudo systemctl reload nginx"
