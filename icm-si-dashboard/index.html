@@ -62,6 +62,10 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span>Account</span>
         </a>
+        <a href="#archived" class="nav-item" data-page="archived">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+          <span>Archived</span>
+        </a>
       </nav>
       <div class="sidebar-user">
         <img id="sidebar-avatar" src="" alt="User" class="sidebar-avatar" />
@@ -164,6 +168,7 @@
                   <th>Date Created</th>
                   <th>Discovery Link</th>
                   <th>Actions</th>
+                  <th>Archive</th>
                 </tr>
               </thead>
               <tbody id="customers-tbody"></tbody>
@@ -270,6 +275,45 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             Sign Out
           </button>
+        </div>
+      </div>
+
+      <!-- ── Archived Page ── -->
+      <div id="page-archived" class="page">
+        <div class="page-header">
+          <h2>Archived Customers</h2>
+          <p>Manage archived customer accounts. You can restore or permanently delete them.</p>
+        </div>
+        <div class="card">
+          <div class="table-header">
+            <h3>Archived</h3>
+            <div class="table-controls">
+              <div class="search-box">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="search-archived" placeholder="Search archived..." />
+              </div>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table id="archived-table" class="data-table hidden">
+              <thead>
+                <tr>
+                  <th>Customer Name</th>
+                  <th>PM Name</th>
+                  <th>PM Email</th>
+                  <th>SI Manager</th>
+                  <th>Date Created</th>
+                  <th>Archived On</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="archived-tbody"></tbody>
+            </table>
+            <div id="archived-empty" class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+              <p id="archived-empty-text">No archived customers. When you archive a customer from the Customers page, they will appear here.</p>
+            </div>
+          </div>
         </div>
       </div>
     </main>

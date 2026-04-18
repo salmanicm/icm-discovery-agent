@@ -10,6 +10,7 @@ let currentUser = null;
 let customersData = [];
 let consentData = [];
 let consentFilterCustomer = '';
+let archivedData = [];
 
 /* ═══════════════════════════════════════════════════════
    DOM REFS
@@ -31,6 +32,7 @@ const pages = {
   'customers':   $('#page-customers'),
   'consent-log': $('#page-consent-log'),
   'account':     $('#page-account'),
+  'archived':    $('#page-archived'),
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -197,6 +199,7 @@ function navigateTo(page) {
   // Load data
   if (page === 'customers') loadCustomers();
   if (page === 'consent-log') loadConsentLog();
+  if (page === 'archived') loadArchived();
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -269,7 +272,11 @@ async function loadCustomers() {
 
 function renderCustomersTable(data) {
   const tbody = $('#customers-tbody');
-  tbody.innerHTML = data.map(c => `
+  tbody.innerHTML = data.map(c => {
+    const custKey = (c['Customer Name'] || '') + '|' + (c['PM Email'] || '');
+    const isArchived = archivedData.some(a => a._archiveKey === custKey);
+    if (isArchived) return ''; // hide archived from active list
+    return `
     <tr>
       <td style="color:var(--text-primary);font-weight:500">${esc(c['Customer Name'])}</td>
       <td>${esc(c['PM Name'])}</td>
@@ -288,8 +295,15 @@ function renderCustomersTable(data) {
           View Consent Log
         </button>
       </td>
+      <td>
+        <button class="btn-archive" onclick="archiveCustomer('${esc(custKey)}')" title="Archive this customer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>
+          Archive
+        </button>
+      </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function filterCustomersTable() {
@@ -547,6 +561,124 @@ window.viewConsentLog = function(customerName) {
 };
 
 /* ═══════════════════════════════════════════════════════
+   ARCHIVE SYSTEM
+   ═══════════════════════════════════════════════════════ */
+function getArchivedFromStorage() {
+  try {
+    return JSON.parse(localStorage.getItem('icm_archived') || '[]');
+  } catch { return []; }
+}
+
+function saveArchivedToStorage(data) {
+  localStorage.setItem('icm_archived', JSON.stringify(data));
+}
+
+function loadArchived() {
+  archivedData = getArchivedFromStorage();
+  const table = $('#archived-table');
+  const empty = $('#archived-empty');
+
+  if (archivedData.length === 0) {
+    table.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+
+  renderArchivedTable(archivedData);
+  table.classList.remove('hidden');
+  empty.classList.add('hidden');
+}
+
+function renderArchivedTable(data) {
+  const tbody = $('#archived-tbody');
+  tbody.innerHTML = data.map((c, idx) => `
+    <tr>
+      <td style="color:var(--text-primary);font-weight:500">${esc(c['Customer Name'])}</td>
+      <td>${esc(c['PM Name'])}</td>
+      <td>${esc(c['PM Email'])}</td>
+      <td>${esc(c['SI Manager Email'])}</td>
+      <td>${esc(c['Date Created'])}</td>
+      <td>${esc(c._archivedOn || '—')}</td>
+      <td class="archive-actions">
+        <button class="btn-restore" onclick="restoreCustomer(${idx})" title="Restore to active">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+          Restore
+        </button>
+        <button class="btn-delete" onclick="deleteArchivedCustomer(${idx})" title="Permanently delete">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+          Delete
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterArchivedTable() {
+  const query = $('#search-archived').value.toLowerCase();
+  const filtered = archivedData.filter(c =>
+    (c['Customer Name'] || '').toLowerCase().includes(query) ||
+    (c['PM Name'] || '').toLowerCase().includes(query) ||
+    (c['PM Email'] || '').toLowerCase().includes(query)
+  );
+  if (filtered.length > 0) {
+    renderArchivedTable(filtered);
+    $('#archived-table').classList.remove('hidden');
+    $('#archived-empty').classList.add('hidden');
+  } else {
+    $('#archived-table').classList.add('hidden');
+    $('#archived-empty').classList.remove('hidden');
+    $('#archived-empty-text').textContent = 'No archived customers match your search.';
+  }
+}
+
+window.archiveCustomer = function(custKey) {
+  const customer = customersData.find(c => {
+    const key = (c['Customer Name'] || '') + '|' + (c['PM Email'] || '');
+    return key === custKey;
+  });
+  if (!customer) return;
+
+  if (!confirm(`Archive "${customer['Customer Name']}"?\n\nThis will hide the customer from the active list. You can restore them anytime from the Archived page.`)) {
+    return;
+  }
+
+  archivedData = getArchivedFromStorage();
+  const archiveEntry = { ...customer, _archiveKey: custKey, _archivedOn: new Date().toLocaleDateString('en-US') };
+  archivedData.push(archiveEntry);
+  saveArchivedToStorage(archivedData);
+
+  // Re-render customers table (archived ones will be hidden)
+  renderCustomersTable(customersData);
+  showToast(`"${customer['Customer Name']}" has been archived.`);
+};
+
+window.restoreCustomer = function(idx) {
+  archivedData = getArchivedFromStorage();
+  if (idx < 0 || idx >= archivedData.length) return;
+
+  const customer = archivedData[idx];
+  if (!confirm(`Restore "${customer['Customer Name']}" to active customers?`)) return;
+
+  archivedData.splice(idx, 1);
+  saveArchivedToStorage(archivedData);
+  loadArchived();
+  showToast(`"${customer['Customer Name']}" has been restored.`);
+};
+
+window.deleteArchivedCustomer = function(idx) {
+  archivedData = getArchivedFromStorage();
+  if (idx < 0 || idx >= archivedData.length) return;
+
+  const customer = archivedData[idx];
+  if (!confirm(`⚠️ Permanently delete "${customer['Customer Name']}"?\n\nThis action cannot be undone.`)) return;
+
+  archivedData.splice(idx, 1);
+  saveArchivedToStorage(archivedData);
+  loadArchived();
+  showToast(`"${customer['Customer Name']}" has been permanently deleted.`);
+};
+
+/* ═══════════════════════════════════════════════════════
    EVENT LISTENERS
    ═══════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
@@ -615,6 +747,15 @@ document.addEventListener('DOMContentLoaded', () => {
       navigateTo('customers');
     });
   }
+
+  // Archived search
+  const searchArchived = $('#search-archived');
+  if (searchArchived) {
+    searchArchived.addEventListener('input', filterArchivedTable);
+  }
+
+  // Load archived data on startup
+  archivedData = getArchivedFromStorage();
 
   // Check auth
   checkAuth();
