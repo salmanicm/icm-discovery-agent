@@ -11,6 +11,7 @@ let customersData = [];
 let consentData = [];
 let consentFilterCustomer = '';
 let archivedData = [];
+let deletedKeys = [];
 
 /* ═══════════════════════════════════════════════════════
    DOM REFS
@@ -276,6 +277,8 @@ function renderCustomersTable(data) {
     const custKey = (c['Customer Name'] || '') + '|' + (c['PM Email'] || '');
     const isArchived = archivedData.some(a => a._archiveKey === custKey);
     if (isArchived) return ''; // hide archived from active list
+    const isDeleted = deletedKeys.includes(custKey);
+    if (isDeleted) return ''; // hide permanently deleted from active list
     return `
     <tr>
       <td style="color:var(--text-primary);font-weight:500">${esc(c['Customer Name'])}</td>
@@ -573,6 +576,16 @@ function saveArchivedToStorage(data) {
   localStorage.setItem('icm_archived', JSON.stringify(data));
 }
 
+function getDeletedKeysFromStorage() {
+  try {
+    return JSON.parse(localStorage.getItem('icm_deleted') || '[]');
+  } catch { return []; }
+}
+
+function saveDeletedKeysToStorage(keys) {
+  localStorage.setItem('icm_deleted', JSON.stringify(keys));
+}
+
 function loadArchived() {
   archivedData = getArchivedFromStorage();
   const table = $('#archived-table');
@@ -675,12 +688,21 @@ window.deleteArchivedCustomer = function(archiveKey) {
   if (idx === -1) return;
 
   const customer = archivedData[idx];
-  if (!confirm(`⚠️ Permanently delete "${customer['Customer Name']}"?\n\nThis action cannot be undone.`)) return;
+  if (!confirm(`⚠️ Permanently delete "${customer['Customer Name']}"?\n\nThis will hide the customer from the dashboard entirely.\nThe original data in Google Sheets will NOT be affected.`)) return;
 
+  // Remove from archived list
   archivedData.splice(idx, 1);
   saveArchivedToStorage(archivedData);
+
+  // Add to permanently deleted list (hides from All Customers too)
+  deletedKeys = getDeletedKeysFromStorage();
+  if (!deletedKeys.includes(archiveKey)) {
+    deletedKeys.push(archiveKey);
+    saveDeletedKeysToStorage(deletedKeys);
+  }
+
   loadArchived();
-  showToast(`"${customer['Customer Name']}" has been permanently deleted.`);
+  showToast(`"${customer['Customer Name']}" has been permanently deleted from the dashboard.`);
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -761,6 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Load archived data on startup
   archivedData = getArchivedFromStorage();
+  deletedKeys = getDeletedKeysFromStorage();
 
   // Check auth
   checkAuth();
