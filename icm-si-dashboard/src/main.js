@@ -591,7 +591,9 @@ function loadArchived() {
 
 function renderArchivedTable(data) {
   const tbody = $('#archived-tbody');
-  tbody.innerHTML = data.map((c, idx) => `
+  tbody.innerHTML = data.map(c => {
+    const safeKey = esc(c._archiveKey || '').replace(/'/g, "\\'");
+    return `
     <tr>
       <td style="color:var(--text-primary);font-weight:500">${esc(c['Customer Name'])}</td>
       <td>${esc(c['PM Name'])}</td>
@@ -600,17 +602,18 @@ function renderArchivedTable(data) {
       <td>${esc(c['Date Created'])}</td>
       <td>${esc(c._archivedOn || '—')}</td>
       <td class="archive-actions">
-        <button class="btn-restore" onclick="restoreCustomer(${idx})" title="Restore to active">
+        <button class="btn-restore" onclick="restoreCustomer('${safeKey}')" title="Restore to active">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
           Restore
         </button>
-        <button class="btn-delete" onclick="deleteArchivedCustomer(${idx})" title="Permanently delete">
+        <button class="btn-delete" onclick="deleteArchivedCustomer('${safeKey}')" title="Permanently delete">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
           Delete
         </button>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function filterArchivedTable() {
@@ -652,9 +655,10 @@ window.archiveCustomer = function(custKey) {
   showToast(`"${customer['Customer Name']}" has been archived.`);
 };
 
-window.restoreCustomer = function(idx) {
+window.restoreCustomer = function(archiveKey) {
   archivedData = getArchivedFromStorage();
-  if (idx < 0 || idx >= archivedData.length) return;
+  const idx = archivedData.findIndex(a => a._archiveKey === archiveKey);
+  if (idx === -1) return;
 
   const customer = archivedData[idx];
   if (!confirm(`Restore "${customer['Customer Name']}" to active customers?`)) return;
@@ -665,9 +669,10 @@ window.restoreCustomer = function(idx) {
   showToast(`"${customer['Customer Name']}" has been restored.`);
 };
 
-window.deleteArchivedCustomer = function(idx) {
+window.deleteArchivedCustomer = function(archiveKey) {
   archivedData = getArchivedFromStorage();
-  if (idx < 0 || idx >= archivedData.length) return;
+  const idx = archivedData.findIndex(a => a._archiveKey === archiveKey);
+  if (idx === -1) return;
 
   const customer = archivedData[idx];
   if (!confirm(`⚠️ Permanently delete "${customer['Customer Name']}"?\n\nThis action cannot be undone.`)) return;
