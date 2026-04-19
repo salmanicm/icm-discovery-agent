@@ -49,7 +49,7 @@ steps:
   # DEPLOY TO VM
   # ══════════════════════════════════════════════════
 
-  # Step 5: Deploy Agent to VM
+  # Step 5: Deploy Agent to VM (SCP to tmp, then sudo move)
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -57,13 +57,13 @@ steps:
       - |
         gcloud compute scp --recurse \
           icm-discovery-agent/dist/* \
-          function-vm:/var/www/agent/ \
+          function-vm:/tmp/agent-deploy/ \
           --zone=us-central1-a \
           --quiet
     id: 'deploy-agent'
     waitFor: ['agent-build']
 
-  # Step 6: Deploy Dashboard to VM
+  # Step 6: Deploy Dashboard to VM (SCP to tmp, then sudo move)
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -71,13 +71,13 @@ steps:
       - |
         gcloud compute scp --recurse \
           icm-si-dashboard/dist/* \
-          function-vm:/var/www/dashboard/ \
+          function-vm:/tmp/dashboard-deploy/ \
           --zone=us-central1-a \
           --quiet
     id: 'deploy-dashboard'
     waitFor: ['dashboard-build']
 
-  # Step 7: Restart Nginx to pick up changes
+  # Step 7: Move files to /var/www and restart Nginx
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -86,8 +86,13 @@ steps:
         gcloud compute ssh function-vm \
           --zone=us-central1-a \
           --quiet \
-          --command="sudo nginx -t && sudo systemctl reload nginx"
-    id: 'restart-nginx'
+          --command="sudo rm -rf /var/www/agent/* /var/www/dashboard/* && \
+            sudo cp -r /tmp/agent-deploy/* /var/www/agent/ && \
+            sudo cp -r /tmp/dashboard-deploy/* /var/www/dashboard/ && \
+            sudo chown -R www-data:www-data /var/www/agent /var/www/dashboard && \
+            rm -rf /tmp/agent-deploy /tmp/dashboard-deploy && \
+            sudo nginx -t && sudo systemctl reload nginx"
+    id: 'finalize-deploy'
     waitFor: ['deploy-agent', 'deploy-dashboard']
 
 timeout: '600s'
