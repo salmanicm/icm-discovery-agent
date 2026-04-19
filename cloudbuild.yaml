@@ -49,7 +49,20 @@ steps:
   # DEPLOY TO VM
   # ══════════════════════════════════════════════════
 
-  # Step 5: Deploy Agent to VM (SCP to tmp, then sudo move)
+  # Step 5: Prepare VM temp directories
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        gcloud compute ssh function-vm \
+          --zone=us-central1-a \
+          --quiet \
+          --command="mkdir -p /tmp/agent-deploy /tmp/dashboard-deploy"
+    id: 'prep-vm'
+    waitFor: ['agent-build', 'dashboard-build']
+
+  # Step 6: Deploy Agent to VM (SCP to tmp)
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -61,9 +74,9 @@ steps:
           --zone=us-central1-a \
           --quiet
     id: 'deploy-agent'
-    waitFor: ['agent-build']
+    waitFor: ['prep-vm']
 
-  # Step 6: Deploy Dashboard to VM (SCP to tmp, then sudo move)
+  # Step 7: Deploy Dashboard to VM (SCP to tmp)
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
@@ -75,9 +88,9 @@ steps:
           --zone=us-central1-a \
           --quiet
     id: 'deploy-dashboard'
-    waitFor: ['dashboard-build']
+    waitFor: ['prep-vm']
 
-  # Step 7: Move files to /var/www and restart Nginx
+  # Step 8: Move files to /var/www and restart Nginx
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
