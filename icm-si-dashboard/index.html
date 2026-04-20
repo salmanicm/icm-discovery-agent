@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iCareManager — SI Manager Dashboard v2</title>
+  <title>iCM Dashboard</title>
   <meta name="description" content="iCareManager System Implementation Manager Dashboard for customer management and consent tracking." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,14 +17,7 @@
   <div id="login-screen" class="screen active">
     <div class="login-container">
       <div class="login-logo">
-        <div class="logo-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-            <rect width="48" height="48" rx="12" fill="url(#logo-grad)" />
-            <path d="M14 24l6 6 14-14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <defs><linearGradient id="logo-grad" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
-          </svg>
-        </div>
-        <h1>iCareManager</h1>
+        <img class="login-logo-img" src="/logo-icm.svg" alt="iCareManager" />
         <p class="login-subtitle">SI Manager Dashboard</p>
       </div>
       <button id="btn-google-login" class="btn-google-login">
@@ -41,12 +34,7 @@
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-logo">
-          <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
-            <rect width="48" height="48" rx="12" fill="url(#slogo)" />
-            <path d="M14 24l6 6 14-14" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <defs><linearGradient id="slogo" x1="0" y1="0" x2="48" y2="48"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
-          </svg>
-          <span>iCM Dashboard</span>
+          <img class="sidebar-logo-img" src="/logo-icm.svg" alt="iCareManager" />
         </div>
       </div>
       <nav class="sidebar-nav">
@@ -110,9 +98,9 @@
               </div>
             </div>
             <div class="form-actions">
-              <button type="submit" id="btn-add-customer" class="btn-primary">
+              <button type="submit" id="btn-add-customer" class="btn-success">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Generate Link & Create Customer
+                Generate Link &amp; Create Customer
               </button>
             </div>
           </form>

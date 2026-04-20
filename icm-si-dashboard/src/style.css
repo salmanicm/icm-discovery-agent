@@ -76,6 +76,12 @@ html, body {
 }
 
 .login-logo { margin-bottom: 32px; }
+.login-logo-img {
+  height: 42px;
+  width: auto;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
 .login-logo .logo-icon { margin: 0 auto 16px; }
 .login-logo h1 {
   font-size: 24px; font-weight: 700;
@@ -126,6 +132,14 @@ html, body {
 .sidebar-logo {
   display: flex; align-items: center; gap: 10px;
   font-size: 16px; font-weight: 600; color: var(--text-primary);
+}
+.sidebar-logo-icon {
+  flex-shrink: 0;
+}
+.sidebar-logo-img {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
 }
 
 .sidebar-nav { flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -239,6 +253,22 @@ html, body {
   box-shadow: 0 4px 16px rgba(99,102,241,0.3);
 }
 .btn-primary:disabled {
+  opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;
+}
+
+.btn-success {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: white; border: none;
+  font-size: 14px; font-weight: 600; font-family: var(--font);
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-success:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(22,163,74,0.3);
+}
+.btn-success:disabled {
   opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none;
 }
 
