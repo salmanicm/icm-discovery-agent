@@ -879,9 +879,16 @@ a:hover { text-decoration: underline; }
   opacity: 1;
 }
 
+/* Hide checkmark by default */
 .stage-chip .chip-check {
   font-size: .7rem;
   line-height: 1;
+  display: none;
+}
+
+/* Show checkmark only on completed chips */
+.stage-chip.completed .chip-check {
+  display: inline;
 }
 
 /* ═══════════════════════════════════════════════════════

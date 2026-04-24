@@ -63,6 +63,7 @@ class DiscoveryApp {
     this.lastCompletedStage = '';
     this.currentStage    = 0;
     this.completedStages = new Set();
+    this.lastStageChangeTime = 0;
     this.sessionStart    = null;
     this.timerInterval   = null;
     this.elapsedSeconds  = 0;
@@ -532,8 +533,10 @@ class DiscoveryApp {
         this.transcriptLog += `${role}: ${text}\n`;
         console.log('[Transcript]', role, ':', text);
 
-        /* Detect stage from all messages */
-        this.detectStage(text);
+        /* Only detect stage transitions from ASSISTANT messages */
+        if (msg.role === 'assistant') {
+          this.detectStage(text);
+        }
 
         /* Detect session completion (Change 7) */
         this.detectCompletion(text);
@@ -546,10 +549,14 @@ class DiscoveryApp {
     }
   }
 
-  /* ── Stage Detection (Change 5 — Fixed) ────────────
+  /* ── Stage Detection (Change 5 — Robust) ───────────
      Only advance ONE stage at a time, strictly sequential.
-     A stage is marked 'completed' only when we detect
-     the NEXT stage has started. ─────────────────────── */
+     Requires EITHER:
+       a) A transition phrase + 1 keyword match, OR
+       b) 2+ keyword matches without transition phrase
+     Plus a 60-second debounce between transitions.
+     Only processes ASSISTANT messages (filtered upstream).
+     ───────────────────────────────────────────────────── */
   detectStage(text) {
     const lower = text.toLowerCase();
 
@@ -557,17 +564,38 @@ class DiscoveryApp {
     const nextIdx = this.currentStage + 1;
     if (nextIdx >= STAGES.length) return; // already on last stage
 
+    /* Debounce: require at least 60 seconds between stage transitions */
+    const now = Date.now();
+    if (now - this.lastStageChangeTime < 60000) return;
+
+    /* Check for transition phrases that signal a topic change */
+    const transitionPhrases = [
+      "let's move on", "let's talk about", "let's discuss",
+      "moving on to", "now i'd like to ask", "now let's",
+      "next topic", "next area", "the next thing",
+      "before we move on", "let me ask you about",
+      "i want to ask about", "let's shift to",
+      "now i want to", "let's turn to",
+    ];
+    const hasTransition = transitionPhrases.some(p => lower.includes(p));
+
+    /* Count keyword matches for the next stage */
     const nextStage = STAGES[nextIdx];
     let score = 0;
     nextStage.keywords.forEach(kw => {
       if (lower.includes(kw)) score++;
     });
 
-    if (score >= 1) {
+    /* Advance if: transition phrase + 1 keyword, OR 2+ keywords alone */
+    const shouldAdvance = (hasTransition && score >= 1) || score >= 2;
+
+    if (shouldAdvance) {
+      this.lastStageChangeTime = now;
       /* Mark current stage as completed (green + tick) */
       this.completedStages.add(this.currentStage);
       /* Advance to the next stage */
       this.updateStage(nextIdx);
+      console.log(`[Stage] Advanced to stage ${nextIdx}: ${nextStage.name} (transition: ${hasTransition}, keywords: ${score})`);
     }
   }
 
@@ -607,8 +635,9 @@ class DiscoveryApp {
   updateStageUI() {
     const completed = this.completedStages.size;
     const total = STAGES.length;
-    const pct = Math.round((completed / total) * 100);
-    this.els.progressPct.textContent = `${pct}%`;
+    /* Include the active stage as "in progress" so % is never stuck at 0 */
+    const pct = Math.round(((completed + 1) / total) * 100);
+    this.els.progressPct.textContent = `${Math.min(pct, 100)}%`;
     this.lastCompletedStage = STAGES[Math.max(0, ...this.completedStages, this.currentStage)]?.id || '';
 
     /* Update chips — strict: only green if in completedStages set */
