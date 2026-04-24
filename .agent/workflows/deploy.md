@@ -46,6 +46,6 @@ git push origin main
 ## Notes
 - Cloud Build picks up the push and deploys both apps to the VM automatically
 - Build takes ~5 minutes to complete
-- Discovery Agent serves at: `https://onboarding.icaremanager.com`
+- Discovery Agent serves at: `https://aidiscoveryagent.icaremanager.com`
 - SI Dashboard serves at: `https://initialdiscovery.icaremanager.com`
 - Always build before pushing — Cloud Build also builds, but local build catches errors early
