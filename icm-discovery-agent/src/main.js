@@ -64,6 +64,8 @@ class DiscoveryApp {
     this.currentStage    = 0;
     this.completedStages = new Set();
     this.lastStageChangeTime = 0;
+    this.stageMessageCount = 0;
+    this.MESSAGES_PER_STAGE = 6;
     this.sessionStart    = null;
     this.timerInterval   = null;
     this.elapsedSeconds  = 0;
@@ -331,6 +333,21 @@ class DiscoveryApp {
     this.lastCompletedStage = lastStage;
     this.sessionId = resuming && existingSessionId ? existingSessionId : generateUUID();
 
+    /* Restore progress state when resuming */
+    if (resuming && lastStage) {
+      const stageIdx = STAGES.findIndex(s => s.id === lastStage);
+      if (stageIdx >= 0) {
+        /* Mark all stages up to and including lastCompletedStage as completed */
+        for (let i = 0; i <= stageIdx; i++) {
+          this.completedStages.add(i);
+        }
+        /* Set current stage to the next one after what was completed */
+        this.currentStage = Math.min(stageIdx + 1, STAGES.length - 1);
+        this.stageMessageCount = 0;
+        console.log(`[Resume] Restored progress: ${this.completedStages.size} stages completed, now on stage ${this.currentStage} (${STAGES[this.currentStage]?.name})`);
+      }
+    }
+
     const btnText = this.els.startBtn.querySelector('.btn-text');
     btnText.textContent = 'Connecting to AI…';
 
@@ -412,7 +429,14 @@ class DiscoveryApp {
       this.showScreen('session');
       this.startTimer();
       this.setSessionState('idle');
-      this.updateStage(0);
+
+      /* If resuming, use restored stage; otherwise start at 0 */
+      if (this.resumeSession && this.completedStages.size > 0) {
+        this.updateStage(this.currentStage);
+        console.log(`[Resume] UI restored to stage ${this.currentStage}, ${this.completedStages.size} completed`);
+      } else {
+        this.updateStage(0);
+      }
       this.acquireWakeLock();
     });
 
@@ -535,7 +559,9 @@ class DiscoveryApp {
 
         /* Only detect stage transitions from ASSISTANT messages */
         if (msg.role === 'assistant') {
+          this.stageMessageCount++;
           this.detectStage(text);
+          this.updateStageUI(); /* Update sub-progress within current stage */
         }
 
         /* Detect session completion (Change 7) */
@@ -593,6 +619,8 @@ class DiscoveryApp {
       this.lastStageChangeTime = now;
       /* Mark current stage as completed (green + tick) */
       this.completedStages.add(this.currentStage);
+      /* Reset message count for the new stage */
+      this.stageMessageCount = 0;
       /* Advance to the next stage */
       this.updateStage(nextIdx);
       console.log(`[Stage] Advanced to stage ${nextIdx}: ${nextStage.name} (transition: ${hasTransition}, keywords: ${score})`);
@@ -629,14 +657,18 @@ class DiscoveryApp {
     if (stage) {
       this.els.currentDept.textContent = stage.name;
     }
+    this.stageMessageCount = 0;
     this.updateStageUI();
   }
 
   updateStageUI() {
     const completed = this.completedStages.size;
     const total = STAGES.length;
-    /* Include the active stage as "in progress" so % is never stuck at 0 */
-    const pct = Math.round(((completed + 1) / total) * 100);
+    const stageWeight = 100 / total; // ~11.1% per stage
+
+    /* Granular progress: completed stages + sub-progress within current stage */
+    const subProgress = Math.min(this.stageMessageCount / this.MESSAGES_PER_STAGE, 0.95); // cap at 95% of stage
+    const pct = Math.round((completed * stageWeight) + (subProgress * stageWeight));
     this.els.progressPct.textContent = `${Math.min(pct, 100)}%`;
     this.lastCompletedStage = STAGES[Math.max(0, ...this.completedStages, this.currentStage)]?.id || '';
 
@@ -707,6 +739,8 @@ class DiscoveryApp {
       sessionId:          this.sessionId,
       transcript:         transcript || '',
       lastCompletedStage: this.lastCompletedStage,
+      currentStageIndex:  this.currentStage,
+      completedStagesCount: this.completedStages.size,
       sessionComplete:    false,
     };
 
